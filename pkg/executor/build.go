@@ -478,7 +478,7 @@ func (s *stageBuilder) saveSnapshotToImage(createdBy string, tarPath string) err
 	}
 
 	if layer == nil {
-		return nil
+		return s.saveEmptyLayerToImage(layer, createdBy)
 	}
 
 	return s.saveLayerToImage(layer, createdBy)
@@ -607,6 +607,24 @@ func (s *stageBuilder) convertLayerMediaType(layer v1.Layer) (v1.Layer, error) {
 	return layer, nil
 }
 
+
+func (s *stageBuilder) saveEmptyLayerToImage(layer v1.Layer, createdBy string) error {
+	var err error
+
+	s.image, err = mutate.Append(s.image,
+		mutate.Addendum{
+			Layer: layer,
+			History: v1.History{
+				Author:    constants.Author,
+				CreatedBy: createdBy,
+				EmptyLayer: true,
+			},
+		},
+	)
+	return err
+}
+
+
 func (s *stageBuilder) saveLayerToImage(layer v1.Layer, createdBy string) error {
 	var err error
 	layer, err = s.convertLayerMediaType(layer)
@@ -619,6 +637,7 @@ func (s *stageBuilder) saveLayerToImage(layer v1.Layer, createdBy string) error 
 			History: v1.History{
 				Author:    constants.Author,
 				CreatedBy: createdBy,
+				EmptyLayer: false,
 			},
 		},
 	)
